@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dream Journal Daily Log</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background: #0f0a1e; }
+.dream-gradient { background: linear-gradient(135deg, #1a0a3e 0%, #0f0a1e 100%); }
+.tag-pill {
+  display: inline-block;
+  background: #2d1b69;
+  color: #c4b5fd;
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: 0.7rem;
+  margin: 2px;
+}
+.emotion-tag {
+  display: inline-block;
+  border-radius: 9999px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin: 2px;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.emotion-tag.selected { border-color: white; font-weight: 600; }
+.star-btn { cursor: pointer; font-size: 1.3rem; line-height: 1; }
+.view-btn { transition: all 0.2s; }
+.view-btn.active { background: #5b21b6; color: white; }
+.calendar-cell { width: 28px; height: 28px; font-size: 10px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+.heatmap-0 { background: #1a1a2e; color: #4b5563; }
+.heatmap-1 { background: #2d1b69; color: #c4b5fd; }
+.heatmap-2 { background: #4c1d95; color: #ddd6fe; }
+.heatmap-3 { background: #6d28d9; color: #ede9fe; }
+.word-cloud { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
+.word-tag { cursor: default; border-radius: 4px; padding: 2px 6px; background: #1e1b4b; color: #a5b4fc; transition: 0.15s; }
+input[type=text], textarea, select, input[type=date] {
+  background: #1e1b4b;
+  border: 1px solid #3730a3;
+  border-radius: 0.5rem;
+  color: #e2e8f0;
+  padding: 0.375rem 0.75rem;
+  width: 100%;
+  font-size: 0.875rem;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: #7c3aed; }
+</style>
+</head>
+<body class="text-gray-100 min-h-screen p-4" style="background:#0f0a1e">
+<div class="max-w-4xl mx-auto">
+  <div class="text-center mb-6">
+    <h1 class="text-3xl font-bold text-purple-300 mb-1">Dream Journal</h1>
+    <p class="text-gray-500 text-sm">Log, remember, and understand your dreams</p>
+  </div>
+
+  <!-- Nav -->
+  <div class="flex gap-2 mb-6 bg-gray-900 rounded-xl p-1.5">
+    <button onclick="showView('log')" id="btn-log" class="view-btn active flex-1 py-2 rounded-lg text-sm font-medium focus:outline-none" aria-label="New dream entry">New Entry</button>
+    <button onclick="showView('list')" id="btn-list" class="view-btn flex-1 py-2 rounded-lg text-sm font-medium focus:outline-none text-gray-400" aria-label="View journal entries">Journal</button>
+    <button onclick="showView('analytics')" id="btn-analytics" class="view-btn flex-1 py-2 rounded-lg text-sm font-medium focus:outline-none text-gray-400" aria-label="View analytics">Analytics</button>
+  </div>
+
+  <!-- New Entry View -->
+  <div id="view-log">
+    <div class="bg-gray-900 rounded-2xl p-6 border border-purple-900">
+      <h2 class="text-lg font-semibold text-purple-300 mb-4">Record a Dream</h2>
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1" for="entryDate">Date</label>
+          <input type="date" id="entryDate" aria-label="Dream date">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1" for="entryTitle">Title / Short Description</label>
+          <input type="text" id="entryTitle" placeholder="e.g., Flying over the ocean" aria-label="Dream title">
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs text-gray-400 mb-1" for="entryText">Dream Description</label>
+        <textarea id="entryText" rows="6" placeholder="Describe your dream in detail..." aria-label="Dream description" class="resize-none"></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs text-gray-400 mb-2">Emotions</label>
+        <div class="flex flex-wrap gap-1">
+          <span class="emotion-tag" style="background:#1f2937;color:#9ca3af" data-emotion="neutral" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Neutral</span>
+          <span class="emotion-tag" style="background:#14532d;color:#86efac" data-emotion="happy" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Happy</span>
+          <span class="emotion-tag" style="background:#1e3a5f;color:#93c5fd" data-emotion="calm" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Calm</span>
+          <span class="emotion-tag" style="background:#431407;color:#fca5a5" data-emotion="anxious" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Anxious</span>
+          <span class="emotion-tag" style="background:#450a0a;color:#fda4af" data-emotion="fearful" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Fearful</span>
+          <span class="emotion-tag" style="background:#4c1d95;color:#ddd6fe" data-emotion="vivid" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Vivid</span>
+          <span class="emotion-tag" style="background:#1c1917;color:#fbbf24" data-emotion="lucid" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Lucid ✨</span>
+          <span class="emotion-tag" style="background:#1a2e1a;color:#86efac" data-emotion="nostalgic" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Nostalgic</span>
+          <span class="emotion-tag" style="background:#292524;color:#d6d3d1" data-emotion="confused" onclick="toggleEmotion(this)" role="checkbox" aria-checked="false">Confused</span>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1" for="entryChars">Characters (comma-separated)</label>
+          <input type="text" id="entryChars" placeholder="e.g., Mom, stranger, dog" aria-label="Dream characters">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1" for="entryLocs">Locations (comma-separated)</label>
+          <input type="text" id="entryLocs" placeholder="e.g., old house, beach" aria-label="Dream locations">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1" for="entryTags">Custom Tags (comma-separated)</label>
+          <input type="text" id="entryTags" placeholder="e.g., flying, water, chase" aria-label="Custom tags">
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs text-gray-400 mb-1">Clarity Rating</label>
+        <div class="flex gap-1" id="clarityStars" role="group" aria-label="Dream clarity rating 1 to 5 stars">
+          <span class="star-btn" data-val="1" onclick="setClarity(1)" role="radio" aria-checked="false" tabindex="0" aria-label="1 star">☆</span>
+          <span class="star-btn" data-val="2" onclick="setClarity(2)" role="radio" aria-checked="false" tabindex="0" aria-label="2 stars">☆</span>
+          <span class="star-btn" data-val="3" onclick="setClarity(3)" role="radio" aria-checked="false" tabindex="0" aria-label="3 stars">☆</span>
+          <span class="star-btn" data-val="4" onclick="setClarity(4)" role="radio" aria-checked="false" tabindex="0" aria-label="4 stars">☆</span>
+          <span class="star-btn" data-val="5" onclick="setClarity(5)" role="radio" aria-checked="false" tabindex="0" aria-label="5 stars">☆</span>
+        </div>
+      </div>
+      <div id="editId" class="hidden"></div>
+      <div class="flex gap-3">
+        <button onclick="saveEntry()" class="flex-1 bg-purple-700 hover:bg-purple-600 text-white py-2.5 rounded-xl font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400" aria-label="Save dream entry">Save Dream</button>
+        <button onclick="clearForm()" class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-2.5 px-5 rounded-xl transition-colors focus:outline-none" aria-label="Clear form">Clear</button>
+      </div>
+      <div id="saveMsg" class="mt-2 text-sm text-center text-purple-400 hidden">Dream saved!</div>
+    </div>
+  </div>
+
+  <!-- Journal List View -->
+  <div id="view-list" class="hidden">
+    <div class="flex gap-2 mb-4">
+      <input type="text" id="searchBox" placeholder="Search dreams..." oninput="renderList()" aria-label="Search dreams" class="flex-1">
+      <select id="emotionFilter" onchange="renderList()" aria-label="Filter by emotion" class="w-36" style="width:10rem">
+        <option value="">All emotions</option>
+        <option value="lucid">Lucid</option>
+        <option value="vivid">Vivid</option>
+        <option value="anxious">Anxious</option>
+        <option value="happy">Happy</option>
+        <option value="fearful">Fearful</option>
+      </select>
+    </div>
+    <div id="entryList" class="space-y-3"></div>
+    <div id="emptyList" class="text-center text-gray-600 py-12 hidden">No dreams logged yet. Start your journal!</div>
+  </div>
+
+  <!-- Entry Detail -->
+  <div id="view-detail" class="hidden">
+    <button onclick="showView('list')" class="text-purple-400 hover:text-purple-300 text-sm mb-4 flex items-center gap-1 focus:outline-none" aria-label="Back to journal list">← Back to Journal</button>
+    <div id="detailContent" class="bg-gray-900 rounded-2xl p-6 border border-purple-900"></div>
+  </div>
+
+  <!-- Analytics View -->
+  <div id="view-analytics" class="hidden">
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-gray-900 rounded-xl p-4 text-center border border-purple-900">
+        <div id="statEntries" class="text-3xl font-bold text-purple-300">0</div>
+        <div class="text-gray-500 text-xs mt-1">Total Dreams</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-4 text-center border border-purple-900">
+        <div id="statLucid" class="text-3xl font-bold text-yellow-400">0</div>
+        <div class="text-gray-500 text-xs mt-1">Lucid Dreams</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-4 text-center border border-purple-900">
+        <div id="statStreak" class="text-3xl font-bold text-emerald-400">0</div>
+        <div class="text-gray-500 text-xs mt-1">Day Streak</div>
+      </div>
+    </div>
+
+    <!-- Calendar Heatmap -->
+    <div class="bg-gray-900 rounded-xl p-4 mb-4 border border-purple-900">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-gray-300">Dream Calendar</h3>
+        <div class="flex items-center gap-2 text-xs text-gray-600">
+          <span class="w-4 h-4 heatmap-0 rounded inline-block"></span>None
+          <span class="w-4 h-4 heatmap-1 rounded inline-block"></span>1
+          <span class="w-4 h-4 heatmap-2 rounded inline-block"></span>2
+          <span class="w-4 h-4 heatmap-3 rounded inline-block"></span>3+
+        </div>
+      </div>
+      <div id="calHeatmap" class="overflow-x-auto"></div>
+    </div>
+
+    <!-- Tag Cloud -->
+    <div class="bg-gray-900 rounded-xl p-4 mb-4 border border-purple-900">
+      <h3 class="text-sm font-semibold text-gray-300 mb-3">Dream Themes (Word Cloud)</h3>
+      <div id="tagCloud" class="word-cloud min-h-16"></div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
+      <!-- Emotion pie -->
+      <div class="bg-gray-900 rounded-xl p-4 border border-purple-900">
+        <h3 class="text-sm font-semibold text-gray-300 mb-3">Emotion Distribution</h3>
+        <canvas id="emotionPie" width="260" height="180" aria-label="Emotion distribution pie chart"></canvas>
+      </div>
+      <!-- Monthly bar -->
+      <div class="bg-gray-900 rounded-xl p-4 border border-purple-900">
+        <h3 class="text-sm font-semibold text-gray-300 mb-3">Dreams per Month</h3>
+        <canvas id="monthBar" width="260" height="180" aria-label="Dreams per month bar chart"></canvas>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
+      <!-- Top characters -->
+      <div class="bg-gray-900 rounded-xl p-4 border border-purple-900">
+        <h3 class="text-sm font-semibold text-gray-300 mb-2">Top Characters</h3>
+        <div id="topChars" class="space-y-1 text-sm"></div>
+      </div>
+      <!-- Top locations -->
+      <div class="bg-gray-900 rounded-xl p-4 border border-purple-900">
+        <h3 class="text-sm font-semibold text-gray-300 mb-2">Top Locations</h3>
+        <div id="topLocs" class="space-y-1 text-sm"></div>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <button onclick="exportJSON()" class="bg-gray-700 hover:bg-gray-600 text-sm px-4 py-2 rounded-lg focus:outline-none" aria-label="Export dream journal as JSON">Export JSON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+const STORAGE_KEY = 'dreamJournal_v1';
+let entries = [];
+let currentClarity = 0;
+let selectedEmotions = [];
+
+// Storage
+function load() {
+  try { entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { entries = []; }
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+
+// Views
+function showView(v) {
+  ['log','list','analytics','detail'].forEach(n => {
+    const el = document.getElementById('view-'+n);
+    if (el) el.classList.add('hidden');
+    const btn = document.getElementById('btn-'+n);
+    if (btn) { btn.classList.remove('active'); btn.classList.add('text-gray-400'); }
+  });
+  document.getElementById('view-'+v).classList.remove('hidden');
+  const btn = document.getElementById('btn-'+v);
+  if (btn) { btn.classList.add('active'); btn.classList.remove('text-gray-400'); }
+  if (v === 'list') renderList();
+  if (v === 'analytics') renderAnalytics();
+}
+
+// Entry form
+function toggleEmotion(el) {
+  const emo = el.dataset.emotion;
+  if (selectedEmotions.includes(emo)) {
+    selectedEmotions = selectedEmotions.filter(e => e !== emo);
+    el.classList.remove('selected');
+    el.setAttribute('aria-checked', 'false');
+  } else {
+    selectedEmotions.push(emo);
+    el.classList.add('selected');
+    el.setAttribute('aria-checked', 'true');
+  }
+}
+
+function setClarity(n) {
+  currentClarity = n;
+  document.querySelectorAll('.star-btn').forEach((s, i) => {
+    s.textContent = i < n ? '★' : '☆';
+    s.style.color = i < n ? '#fbbf24' : '#374151';
+    s.setAttribute('aria-checked', i < n ? 'true' : 'false');
+  });
+}
+
+function clearForm() {
+  document.getElementById('entryTitle').value = '';
+  document.getElementById('entryText').value = '';
+  document.getElementById('entryChars').value = '';
+  document.getElementById('entryLocs').value = '';
+  document.getElementById('entryTags').value = '';
+  document.getElementById('entryDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('editId').textContent = '';
+  selectedEmotions = [];
+  document.querySelectorAll('.emotion-tag').forEach(el => {
+    el.classList.remove('selected');
+    el.setAttribute('aria-checked', 'false');
+  });
+  setClarity(0);
+  document.getElementById('saveMsg').classList.add('hidden');
+}
+
+function saveEntry() {
+  const title = document.getElementById('entryTitle').value.trim();
+  const text = document.getElementById('entryText').value.trim();
+  if (!title && !text) { alert('Please add a title or description.'); return; }
+
+  const dateVal = document.getElementById('entryDate').value || new Date().toISOString().slice(0,10);
+  const editId = document.getElementById('editId').textContent;
+
+  const entry = {
+    id: editId || Date.now().toString(),
+    date: dateVal,
+    title: title || text.slice(0, 40),
+    text,
+    emotions: [...selectedEmotions],
+    characters: document.getElementById('entryChars').value.split(',').map(s=>s.trim()).filter(Boolean),
+    locations: document.getElementById('entryLocs').value.split(',').map(s=>s.trim()).filter(Boolean),
+    tags: document.getElementById('entryTags').value.split(',').map(s=>s.trim()).filter(Boolean),
+    clarity: currentClarity,
+    created: editId ? undefined : Date.now()
+  };
+  if (editId) {
+    const idx = entries.findIndex(e => e.id === editId);
+    if (idx >= 0) entries[idx] = { ...entries[idx], ...entry };
+  } else {
+    entry.created = Date.now();
+    entries.unshift(entry);
+  }
+  save();
+  const msg = document.getElementById('saveMsg');
+  msg.classList.remove('hidden');
+  setTimeout(() => msg.classList.add('hidden'), 2000);
+  if (!editId) clearForm();
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this dream entry?')) return;
+  entries = entries.filter(e => e.id !== id);
+  save();
+  renderList();
+}
+
+function editEntry(id) {
+  const e = entries.find(e => e.id === id);
+  if (!e) return;
+  showView('log');
+  document.getElementById('entryDate').value = e.date;
+  document.getElementById('entryTitle').value = e.title;
+  document.getElementById('entryText').value = e.text;
+  document.getElementById('entryChars').value = e.characters.join(', ');
+  document.getElementById('entryLocs').value = e.locations.join(', ');
+  document.getElementById('entryTags').value = e.tags.join(', ');
+  document.getElementById('editId').textContent = e.id;
+  selectedEmotions = [...e.emotions];
+  document.querySelectorAll('.emotion-tag').forEach(el => {
+    const sel = selectedEmotions.includes(el.dataset.emotion);
+    el.classList.toggle('selected', sel);
+    el.setAttribute('aria-checked', sel ? 'true' : 'false');
+  });
+  setClarity(e.clarity || 0);
+}
+
+function viewEntry(id) {
+  const e = entries.find(e => e.id === id);
+  if (!e) return;
+  const emotionColors = {happy:'#86efac',calm:'#93c5fd',anxious:'#fca5a5',fearful:'#fda4af',neutral:'#9ca3af',vivid:'#ddd6fe',lucid:'#fbbf24',nostalgic:'#86efac',confused:'#d6d3d1'};
+  document.getElementById('detailContent').innerHTML = `
+    <div class="text-xs text-gray-500 mb-2">${escapeHtml(e.date)}</div>
+    <h2 class="text-xl font-bold text-purple-300 mb-3">${escapeHtml(e.title)}</h2>
+    <p class="text-gray-300 text-sm mb-4 leading-relaxed whitespace-pre-wrap">${escapeHtml(e.text)}</p>
+    <div class="flex flex-wrap gap-1 mb-3">
+      ${e.emotions.map(em => `<span class="tag-pill" style="background:${emotionColors[em]||'#374151'}22;color:${emotionColors[em]||'#9ca3af'};border:1px solid ${emotionColors[em]||'#374151'}44">${escapeHtml(em)}</span>`).join('')}
+    </div>
+    ${e.characters.length ? `<div class="mb-2"><span class="text-xs text-gray-500">Characters: </span>${e.characters.map(c=>`<span class="tag-pill">${escapeHtml(c)}</span>`).join('')}</div>` : ''}
+    ${e.locations.length ? `<div class="mb-2"><span class="text-xs text-gray-500">Locations: </span>${e.locations.map(l=>`<span class="tag-pill">${escapeHtml(l)}</span>`).join('')}</div>` : ''}
+    ${e.tags.length ? `<div class="mb-2"><span class="text-xs text-gray-500">Tags: </span>${e.tags.map(t=>`<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+    <div class="text-yellow-400 text-lg mt-3">${'★'.repeat(e.clarity||0)}${'☆'.repeat(5-(e.clarity||0))}</div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="editEntry('${e.id}'); showView('log')" class="bg-purple-800 hover:bg-purple-700 text-sm px-3 py-1.5 rounded-lg focus:outline-none" aria-label="Edit this entry">Edit</button>
+      <button onclick="deleteEntry('${e.id}'); showView('list')" class="bg-red-900 hover:bg-red-800 text-sm px-3 py-1.5 rounded-lg focus:outline-none" aria-label="Delete this entry">Delete</button>
+    </div>
+  `;
+  showView('detail');
+}
+
+function renderList() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const emoFilt = document.getElementById('emotionFilter').value;
+  let filtered = entries.filter(e => {
+    const matchQ = !q || e.title.toLowerCase().includes(q) || e.text.toLowerCase().includes(q) || e.tags.some(t=>t.toLowerCase().includes(q));
+    const matchE = !emoFilt || e.emotions.includes(emoFilt);
+    return matchQ && matchE;
+  });
+
+  const el = document.getElementById('entryList');
+  const empty = document.getElementById('emptyList');
+  if (filtered.length === 0) {
+    el.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  const emotionColors = {happy:'#86efac',calm:'#93c5fd',anxious:'#fca5a5',fearful:'#fda4af',neutral:'#9ca3af',vivid:'#ddd6fe',lucid:'#fbbf24',nostalgic:'#86efac',confused:'#d6d3d1'};
+  el.innerHTML = filtered.map(e => `
+    <div class="bg-gray-900 rounded-xl p-4 border border-purple-900 hover:border-purple-700 cursor-pointer transition-colors" onclick="viewEntry('${e.id}')" role="article" aria-label="Dream entry: ${escapeHtml(e.title)}">
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs text-gray-500">${escapeHtml(e.date)}</span>
+            ${e.emotions.includes('lucid') ? '<span class="text-yellow-400 text-xs">✨ Lucid</span>' : ''}
+            <span class="text-yellow-400 text-xs">${'★'.repeat(e.clarity||0)}</span>
+          </div>
+          <div class="font-semibold text-purple-200 truncate">${escapeHtml(e.title)}</div>
+          <div class="text-xs text-gray-500 mt-1 line-clamp-2">${escapeHtml(e.text.slice(0,120))}${e.text.length>120?'…':''}</div>
+        </div>
+        <div class="flex flex-wrap gap-1 max-w-20">
+          ${e.emotions.slice(0,2).map(em=>`<span class="text-xs px-1.5 py-0.5 rounded" style="background:${emotionColors[em]||'#374151'}33;color:${emotionColors[em]||'#9ca3af'}">${escapeHtml(em)}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Analytics
+function renderAnalytics() {
+  const n = entries.length;
+  const lucidCount = entries.filter(e => e.emotions.includes('lucid')).length;
+
+  // Streak calculation
+  const dates = new Set(entries.map(e => e.date));
+  let streak = 0;
+  let d = new Date();
+  while (dates.has(d.toISOString().slice(0,10))) {
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+
+  document.getElementById('statEntries').textContent = n;
+  document.getElementById('statLucid').textContent = lucidCount;
+  document.getElementById('statStreak').textContent = streak;
+
+  renderHeatmap();
+  renderTagCloud();
+  renderEmotionPie();
+  renderMonthBar();
+  renderTopLists();
+}
+
+function renderHeatmap() {
+  const container = document.getElementById('calHeatmap');
+  // Last 12 weeks (84 days)
+  const dayCounts = {};
+  entries.forEach(e => { dayCounts[e.date] = (dayCounts[e.date] || 0) + 1; });
+
+  const today = new Date();
+  const weeks = 15;
+  let html = '<div class="flex gap-0.5">';
+
+  // Day labels
+  html += '<div class="flex flex-col gap-0.5 mr-1 text-gray-600" style="font-size:8px">';
+  ['','M','','W','','F',''].forEach(d => { html += `<div class="calendar-cell text-gray-600">${d}</div>`; });
+  html += '</div>';
+
+  for (let w = weeks - 1; w >= 0; w--) {
+    html += '<div class="flex flex-col gap-0.5">';
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - (w * 7 + (6 - d)));
+      const dateStr = date.toISOString().slice(0,10);
+      const count = dayCounts[dateStr] || 0;
+      const level = count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3;
+      const label = `${dateStr}: ${count} dream${count !== 1 ? 's' : ''}`;
+      html += `<div class="calendar-cell heatmap-${level}" title="${label}" aria-label="${label}">${count || ''}</div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderTagCloud() {
+  const counts = {};
+  entries.forEach(e => {
+    const words = [...e.tags, ...e.characters, ...e.locations];
+    // Also extract frequent words from text
+    e.text.toLowerCase().split(/\W+/).filter(w => w.length > 3).forEach(w => {
+      if (!['that','this','with','have','from','they','were','been','their','there','when','what','about','into','would','could','very','just','then','than'].includes(w)) {
+        counts[w] = (counts[w] || 0) + 0.3;
+      }
+    });
+    words.forEach(w => { if (w) counts[w.toLowerCase()] = (counts[w.toLowerCase()] || 0) + 3; });
+  });
+
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 40);
+  if (sorted.length === 0) { document.getElementById('tagCloud').innerHTML = '<span class="text-gray-600 text-sm">No tags yet</span>'; return; }
+  const maxCount = sorted[0][1];
+  document.getElementById('tagCloud').innerHTML = sorted.map(([w,c]) => {
+    const size = 10 + Math.round((c / maxCount) * 18);
+    const opacity = 0.5 + (c / maxCount) * 0.5;
+    return `<span class="word-tag" style="font-size:${size}px;opacity:${opacity}">${w}</span>`;
+  }).join('');
+}
+
+function renderEmotionPie() {
+  const canvas = document.getElementById('emotionPie');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const counts = {};
+  entries.forEach(e => e.emotions.forEach(em => { counts[em] = (counts[em]||0)+1; }));
+  const items = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if (items.length === 0) { ctx.fillStyle='#4b5563'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText('No data',W/2,H/2); return; }
+
+  const total = items.reduce((a,[,v])=>a+v,0);
+  const colors = ['#7c3aed','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#6366f1','#84cc16','#f97316'];
+  const cx = W * 0.38, cy = H / 2, r = Math.min(W,H)*0.35;
+  let angle = -Math.PI / 2;
+
+  items.forEach(([name,count],i) => {
+    const slice = (count/total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,angle,angle+slice);
+    ctx.closePath();
+    ctx.fillStyle = colors[i%colors.length];
+    ctx.fill();
+    ctx.strokeStyle = '#0f0a1e';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    angle += slice;
+  });
+
+  // Legend
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'left';
+  items.slice(0,8).forEach(([name,count],i) => {
+    const y = 15 + i * 18;
+    ctx.fillStyle = colors[i%colors.length];
+    ctx.fillRect(W*0.72, y-8, 10, 10);
+    ctx.fillStyle = '#d1d5db';
+    ctx.fillText(`${name} (${count})`, W*0.72+14, y);
+  });
+}
+
+function renderMonthBar() {
+  const canvas = document.getElementById('monthBar');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const monthCounts = {};
+  entries.forEach(e => {
+    const m = e.date.slice(0,7);
+    monthCounts[m] = (monthCounts[m]||0)+1;
+  });
+  const months = Object.keys(monthCounts).sort().slice(-12);
+  if (!months.length) { ctx.fillStyle='#4b5563'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText('No data',W/2,H/2); return; }
+  const maxV = Math.max(...months.map(m=>monthCounts[m]));
+  const PAD = {top:10,right:10,bottom:30,left:30};
+  const cW = W-PAD.left-PAD.right, cH = H-PAD.top-PAD.bottom;
+  const barW = Math.max(4, cW/months.length - 4);
+
+  months.forEach((m,i) => {
+    const val = monthCounts[m];
+    const x = PAD.left + (i/months.length)*cW;
+    const bH = (val/maxV)*cH;
+    const y = PAD.top + cH - bH;
+    const grad = ctx.createLinearGradient(0,y,0,y+bH);
+    grad.addColorStop(0,'#7c3aed');
+    grad.addColorStop(1,'#4c1d95');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, barW, bH);
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '8px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(m.slice(5), x+barW/2, H-PAD.bottom+12);
+    ctx.fillText(val, x+barW/2, y-2);
+  });
+
+  // Y axis
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '9px sans-serif';
+  ctx.textAlign = 'right';
+  [0,maxV].forEach(v => {
+    const y = PAD.top + cH - (v/maxV)*cH;
+    ctx.fillText(v, PAD.left-3, y+3);
+  });
+}
+
+function renderTopLists() {
+  const chars = {}, locs = {};
+  entries.forEach(e => {
+    e.characters.forEach(c => { chars[c] = (chars[c]||0)+1; });
+    e.locations.forEach(l => { locs[l] = (locs[l]||0)+1; });
+  });
+  const topChars = Object.entries(chars).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const topLocs = Object.entries(locs).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  const maxC = topChars[0]?.[1] || 1;
+  const maxL = topLocs[0]?.[1] || 1;
+
+  document.getElementById('topChars').innerHTML = topChars.length ? topChars.map(([n,c]) => `
+    <div class="flex items-center gap-2">
+      <span class="text-gray-400 w-24 truncate text-xs">${n}</span>
+      <div class="flex-1 bg-gray-800 rounded-full h-1.5"><div class="bg-purple-500 h-1.5 rounded-full" style="width:${c/maxC*100}%"></div></div>
+      <span class="text-xs text-gray-500">${c}</span>
+    </div>`).join('') : '<span class="text-gray-600 text-xs">No characters logged</span>';
+
+  document.getElementById('topLocs').innerHTML = topLocs.length ? topLocs.map(([n,c]) => `
+    <div class="flex items-center gap-2">
+      <span class="text-gray-400 w-24 truncate text-xs">${n}</span>
+      <div class="flex-1 bg-gray-800 rounded-full h-1.5"><div class="bg-blue-500 h-1.5 rounded-full" style="width:${c/maxL*100}%"></div></div>
+      <span class="text-xs text-gray-500">${c}</span>
+    </div>`).join('') : '<span class="text-gray-600 text-xs">No locations logged</span>';
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(entries, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'dream-journal.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Init
+load();
+document.getElementById('entryDate').value = new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
